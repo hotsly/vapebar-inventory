@@ -4,7 +4,7 @@ class SheetsAPI {
     constructor() {
         this.data = [];
         this.headers = [];
-        this.apiUrl = 'http://localhost:3000/api/sheets';
+        this.apiUrl = '/api/sheets';
     }
 
     /**
@@ -67,22 +67,22 @@ class SheetsAPI {
             const sheet = sheetName || CONFIG.sheetName;
             const url = `${this.apiUrl}/read?spreadsheetId=${CONFIG.sheetId}&range=${encodeURIComponent(sheet)}`;
             console.log('Fetching from:', url);
-            
+
             const response = await fetch(url);
-            
+
             if (!response.ok) {
                 throw new Error('Failed to fetch data from Google Sheets');
             }
 
             const result = await response.json();
-            
+
             if (result.error) {
                 throw new Error(result.error);
             }
 
             this.headers = result.headers || [];
             this.data = result.data || [];
-            
+
             return {
                 headers: this.headers,
                 data: this.data
@@ -164,8 +164,8 @@ class SheetsAPI {
         if (!query) return this.data;
 
         const lowerQuery = query.toLowerCase();
-        return this.data.filter(row => 
-            row.some(cell => 
+        return this.data.filter(row =>
+            row.some(cell =>
                 String(cell).toLowerCase().includes(lowerQuery)
             )
         );
@@ -178,14 +178,14 @@ class SheetsAPI {
         return [...this.data].sort((a, b) => {
             const aVal = a[columnIndex] || '';
             const bVal = b[columnIndex] || '';
-            
+
             // Try numeric comparison first
             if (!isNaN(aVal) && !isNaN(bVal)) {
                 return ascending ? aVal - bVal : bVal - aVal;
             }
-            
+
             // Fall back to string comparison
-            return ascending 
+            return ascending
                 ? String(aVal).localeCompare(String(bVal))
                 : String(bVal).localeCompare(String(aVal));
         });
