@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VapeBar - Inventory Management</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>🏪 VapeBar Inventory</h1>
+                <p class="subtitle">Smart Storage Management System</p>
+            </div>
+            <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
+        </header>
+
+        <main>
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <button class="tab-btn active" data-tab="inventory">📦 Inventory</button>
+                <button class="tab-btn" data-tab="add-item">➕ Add Item</button>
+                <button class="tab-btn" data-tab="sales">💸 Sales</button>
+                <button class="tab-btn" data-tab="warranty">🔄 Warranty</button>
+                <button class="tab-btn" data-tab="loans">📝 Loans</button>
+                <button class="tab-btn" data-tab="analytics">📊 Analytics</button>
+            </div>
+
+            <!-- Inventory Tab -->
+            <section class="tab-content active" id="inventory">
+                <h2>Current Inventory</h2>
+                
+                <div class="controls">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search by brand, flavor, or type..."
+                        class="input-field search-input"
+                    >
+                    <select id="categoryFilter" class="input-field filter-select">
+                        <option value="">All Categories</option>
+                        <option value="Vape Juice/Pod">Vape Juice/Pod</option>
+                        <option value="Vape Device">Vape Device</option>
+                    </select>
+                    <button id="refreshBtn" class="btn btn-secondary">🔄 Refresh</button>
+                </div>
+
+                <div id="loadingMessage" class="loading-message" style="display: none;">
+                    Loading inventory...
+                </div>
+
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+                <div class="inventory-grid" id="inventoryGrid">
+                    <!-- Items will be loaded here -->
+                </div>
+
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <p>📭 No items in inventory yet</p>
+                </div>
+            </section>
+
+            <!-- Add Item Tab -->
+            <section class="tab-content" id="add-item">
+                <h2>Add New Item to Inventory</h2>
+                <form id="itemForm" class="inventory-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="category">Category *</label>
+                            <select id="category" class="input-field" required>
+                                <option value="">Select Category</option>
+                                <option value="Vape Juice/Pod">Vape Juice/Pod</option>
+                                <option value="Vape Device">Vape Device</option>
+                            </select>
+                        </div>
+
+                    <div class="form-group">
+                        <label for="itemName">Item Name *</label>
+                        <input 
+                            type="text" 
+                            id="itemName" 
+                            placeholder="e.g., V2 Blackking Cool Mint, Jazz Classic"
+                            class="input-field"
+                            required
+                        >
+                    </div>                        <div class="form-group">
+                            <label for="version">Version *</label>
+                            <input 
+                                type="text" 
+                                id="version" 
+                                placeholder="e.g., V2, V3, Pro"
+                                class="input-field"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="flavor">Flavor (Juice only)</label>
+                            <input 
+                                type="text" 
+                                id="flavor" 
+                                placeholder="e.g., Strawberry, Vanilla"
+                                class="input-field"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">Quantity *</label>
+                            <input 
+                                type="number" 
+                                id="quantity" 
+                                placeholder="e.g., 50"
+                                class="input-field"
+                                min="1"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="price">Price Per Unit (₱) *</label>
+                            <input 
+                                type="number" 
+                                id="price" 
+                                placeholder="e.g., 12.99"
+                                class="input-field"
+                                step="0.01"
+                                min="0"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dateAdded">Date Added *</label>
+                            <input 
+                                type="date" 
+                                id="dateAdded" 
+                                class="input-field"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="notes">Notes</label>
+                            <textarea 
+                                id="notes" 
+                                placeholder="Add any additional notes..."
+                                class="input-field"
+                                rows="3"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">➕ Add to Inventory</button>
+                        <button type="reset" class="btn btn-secondary">Clear Form</button>
+                    </div>
+                    <div id="formStatus" class="status-message"></div>
+                </form>
+            </section>
+
+            <!-- Loans Tab -->
+            <section class="tab-content" id="loans">
+                <h2>Loans Management</h2>
+
+                <div class="loans-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Unpaid Loans</div>
+                        <div class="stat-value" id="totalUnpaidLoans">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Unpaid Amount</div>
+                        <div class="stat-value" id="totalUnpaidAmount">₱0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Paid Loans</div>
+                        <div class="stat-value" id="totalPaidLoans">0</div>
+                    </div>
+                </div>
+
+                <h3>Unpaid Loans</h3>
+                <div id="unpaidLoansList" class="loans-list">
+                    <!-- Unpaid loans will be shown here -->
+                </div>
+
+                <h3 style="margin-top: 30px;">Paid Loans</h3>
+                <div id="paidLoansList" class="loans-list">
+                    <!-- Paid loans will be shown here -->
+                </div>
+            </section>
+
+            <!-- Analytics Tab -->
+            <section class="tab-content" id="analytics">
+                <h2>Inventory Analytics</h2>
+                
+                <div class="analytics-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Items</div>
+                        <div class="stat-value" id="totalItems">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Quantity</div>
+                        <div class="stat-value" id="totalQuantity">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Value</div>
+                        <div class="stat-value" id="totalValue">₱0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Sales</div>
+                        <div class="stat-value" id="totalSales">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Revenue</div>
+                        <div class="stat-value" id="totalRevenue">₱0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Juice/Pod Items</div>
+                        <div class="stat-value" id="juiceItems">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Device Items</div>
+                        <div class="stat-value" id="deviceItems">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Brands</div>
+                        <div class="stat-value" id="totalBrands">0</div>
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>Category Breakdown</h3>
+                    <div id="categoryBreakdown" class="breakdown-list"></div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>Low Stock Items</h3>
+                    <div id="lowStockItems" class="low-stock-list"></div>
+                </div>
+            </section>
+
+            <!-- Sales Tab -->
+            <section class="tab-content" id="sales">
+                <h2>Record a Sale</h2>
+
+                <div class="sales-type-selector">
+                    <button class="sales-type-btn active" data-type="retail">🛍️ Retail Sale</button>
+                    <button class="sales-type-btn" data-type="bulk">📦 Bulk Sale</button>
+                </div>
+
+                <form id="salesForm" class="inventory-form">
+                    <input type="hidden" id="saleType" value="retail">
+
+                    <!-- Retail item selection -->
+                    <div id="retailItemSection">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="retailBrandSelect">Select Brand *</label>
+                                <select id="retailBrandSelect" class="input-field">
+                                    <option value="">-- Choose a Brand --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="saleQuantity">Quantity *</label>
+                                <input type="number" id="saleQuantity" class="input-field" min="1" value="1">
+                            </div>
+                        </div>
+
+                        <div id="retailFlavorSection" class="form-row" style="display: none;">
+                            <div class="form-group full-width">
+                                <label for="retailFlavorSelect">Select Flavor *</label>
+                                <select id="retailFlavorSelect" class="input-field">
+                                    <option value="">-- Choose a Flavor --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bulk quantity only -->
+                    <div id="bulkQuantitySection" class="form-row" style="display: none;">
+                        <div class="form-group">
+                            <label for="bulkSaleQuantity">Bulk Quantity *</label>
+                            <input type="number" id="bulkSaleQuantity" class="input-field" min="1" value="10">
+                        </div>
+                    </div>
+
+                    <!-- Quick bulk quantity buttons -->
+                    <div id="bulkQuantityButtons" class="form-row" style="display: none;">
+                        <div class="form-group full-width">
+                            <label>Quick Bulk Quantities</label>
+                            <div class="bulk-qty-buttons">
+                                <button type="button" class="qty-btn" data-qty="10">10</button>
+                                <button type="button" class="qty-btn" data-qty="20">20</button>
+                                <button type="button" class="qty-btn" data-qty="30">30</button>
+                                <button type="button" class="qty-btn" data-qty="50">50</button>
+                                <button type="button" class="qty-btn" data-qty="100">100</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Retail-only section -->
+                    <div id="retailSection" class="form-row">
+                        <div class="form-group">
+                            <label for="retailPrice">Price Per Unit (₱) *</label>
+                            <input type="number" id="retailPrice" class="input-field" step="0.01" min="0" placeholder="e.g., 250">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="saleDate">Date</label>
+                            <input type="date" id="saleDate" class="input-field">
+                        </div>
+                    </div>
+
+                    <div id="retailPaymentSection" class="form-row">
+                        <div class="form-group">
+                            <label for="retailPaymentMethod">Payment Method *</label>
+                            <select id="retailPaymentMethod" class="input-field">
+                                <option value="Cash">💵 Cash</option>
+                                <option value="GCash">📱 GCash</option>
+                                <option value="Maya">💳 Maya</option>
+                                <option value="Loan">📝 Loan (Unpaid)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Bulk-only section -->
+                    <div id="bulkSection" class="form-row" style="display: none;">
+                        <div class="form-group full-width">
+                            <div style="background-color: #e3f2fd; padding: 12px; border-radius: 6px; border-left: 4px solid #2196f3; margin-bottom: 15px;">
+                                <strong>Bulk Sale:</strong> You will manually select which flavors to include in the bulk order.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="bulkFlavorSection" class="form-row" style="display: none;">
+                        <div class="form-group full-width">
+                            <div style="margin-bottom: 15px;">
+                                <label for="bulkCategorySelect">Select Category *</label>
+                                <select id="bulkCategorySelect" class="input-field" required>
+                                    <option value="">-- Choose Category --</option>
+                                    <option value="Vape Juice/Pod">Vape Juice/Pod (Flavors)</option>
+                                    <option value="Vape Device">Vape Device</option>
+                                </select>
+                            </div>
+
+                            <div id="bulkItemsContainer" style="display: none;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <label style="margin: 0;">Select Items from <span id="selectedCategoryName" style="font-weight: bold; color: #2196f3;"></span></label>
+                                    <button type="button" id="clearBulkItemsBtn" class="btn btn-secondary" style="padding: 4px 12px; font-size: 13px;">Clear All</button>
+                                </div>
+                                <div id="bulkItemCheckboxes" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; max-height: 400px; overflow-y: auto; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px;">
+                                    <!-- Items will be populated dynamically -->
+                                </div>
+                            </div>
+
+                            <div id="selectedBulkItemsList" style="margin-top: 15px; padding: 15px; background-color: var(--form-bg); border-radius: 6px; border-left: 4px solid #2196f3; display: none;">
+                                <strong style="font-size: 15px;">Selected Items:</strong>
+                                <div id="selectedBulkItemsDisplay" style="margin-top: 10px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="bulkPriceSection" class="form-row" style="display: none;">
+                        <div class="form-group">
+                            <label for="bulkSalePrice">Bulk Sale Price Per Piece (₱) *</label>
+                            <input type="number" id="bulkSalePrice" class="input-field" step="0.01" min="0" placeholder="e.g., 200">
+                            <small style="color: #666; font-size: 12px;">Set the selling price per piece for this bulk order</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bulkSaleDate">Date</label>
+                            <input type="date" id="bulkSaleDate" class="input-field">
+                        </div>
+                    </div>
+
+                    <div id="bulkPaymentSection" class="form-row" style="display: none;">
+                        <div class="form-group">
+                            <label for="bulkPaymentMethod">Payment Method *</label>
+                            <select id="bulkPaymentMethod" class="input-field">
+                                <option value="Cash">💵 Cash</option>
+                                <option value="GCash">📱 GCash</option>
+                                <option value="Maya">💳 Maya</option>
+                                <option value="Loan">📝 Loan (Unpaid)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <div class="price-summary">
+                                <div>Unit Price: <span id="summaryUnitPrice">₱0.00</span></div>
+                                <div>Total: <span id="summaryTotal">₱0.00</span></div>
+                                <div id="bulkIndicator" style="color: #27ae60; font-weight: bold; display: none;">✓ Bulk Discount Applied</div>
+                                <div id="bulkPriceInfo"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="saleCustomer">Customer</label>
+                            <input type="text" id="saleCustomer" class="input-field">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="saleNotes">Notes</label>
+                            <textarea id="saleNotes" class="input-field" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">✅ Record Sale</button>
+                        <button type="reset" class="btn btn-secondary">Clear</button>
+                    </div>
+                    <div id="salesStatus" class="status-message"></div>
+                </form>
+
+                <h3>Recent Sales</h3>
+                <div id="recentSales" class="sales-list">
+                    <!-- recent sales will be shown here -->
+                </div>
+            </section>
+
+            <!-- Warranty Tab -->
+            <section class="tab-content" id="warranty">
+                <h2>Warranty & Product Replacement</h2>
+                <p style="margin-bottom: 20px; color: var(--text-color); opacity: 0.8;">Record warranty claims and process free replacements for defective products.</p>
+                
+                <form id="warrantyForm" class="inventory-form">
+                    <h3>New Warranty Claim</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="warrantyItemId">Product *</label>
+                            <select id="warrantyItemId" class="input-field" required>
+                                <option value="">Select Product</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="warrantyQuantity">Quantity Replaced *</label>
+                            <input 
+                                type="number" 
+                                id="warrantyQuantity" 
+                                placeholder="e.g., 1"
+                                class="input-field"
+                                min="1"
+                                value="1"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="warrantyDate">Date of Warranty Claim *</label>
+                            <input 
+                                type="date" 
+                                id="warrantyDate" 
+                                class="input-field"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="warrantyCustomer">Customer Name</label>
+                            <input 
+                                type="text" 
+                                id="warrantyCustomer" 
+                                placeholder="e.g., John Doe"
+                                class="input-field"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="warrantyReason">Reason for Replacement *</label>
+                            <select id="warrantyReason" class="input-field" required>
+                                <option value="">Select Reason</option>
+                                <option value="Device Not Working">Device Not Working</option>
+                                <option value="Defective Battery">Defective Battery</option>
+                                <option value="Leaking Pod">Leaking Pod</option>
+                                <option value="Poor Performance">Poor Performance</option>
+                                <option value="Physical Damage">Physical Damage</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="warrantyNotes">Notes</label>
+                            <textarea 
+                                id="warrantyNotes" 
+                                placeholder="Additional details about the defect..."
+                                class="input-field"
+                                rows="3"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">✅ Process Replacement</button>
+                        <button type="reset" class="btn btn-secondary">Clear</button>
+                    </div>
+                    <div id="warrantyStatus" class="status-message"></div>
+                </form>
+
+                <h3>Warranty Claims History</h3>
+                <div id="warrantyHistory" class="warranty-list">
+                    <!-- warranty claims will be shown here -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>VapeBar Inventory Management • Powered by Google Sheets</p>
+        </footer>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="sheets-api.js"></script>
+    <script src="inventory.js"></script>
+</body>
+</html>

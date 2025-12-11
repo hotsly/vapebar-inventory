@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "google-auth-library": "^10.5.0",
+    "googleapis": "^168.0.0"
+  }
+}
