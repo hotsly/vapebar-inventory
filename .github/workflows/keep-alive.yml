@@ -1,0 +1,16 @@
+name: Keep Render Active
+# This workflow pings the website every 14 minutes to prevent Render from "sleeping".
+# Render sleeps after 15 minutes of inactivity.
+
+on:
+  schedule:
+    - cron: '*/14 * * * *' # Run every 14 minutes
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping_site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Website
+        # REPLACE THE URL BELOW with your actual Render URL (e.g., https://vapebar-inventory.onrender.com)
+        run: curl -I https://YOUR-RENDER-APP-NAME.onrender.com
