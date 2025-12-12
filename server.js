@@ -36,6 +36,17 @@ const auth = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: 'v4', auth });
 
+// In-Memory Cache
+const sheetCache = {};
+
+// Cache Helper
+function invalidateCache(sheetName) {
+    if (sheetCache[sheetName]) {
+        console.log(`🗑️ Invalidating cache for: ${sheetName}`);
+        delete sheetCache[sheetName];
+    }
+}
+
 /**
  * Ensure sheet exists, if not create it with headers
  */
@@ -46,9 +57,9 @@ async function ensureSheetExists(spreadsheetId, sheetName, headers = []) {
         });
 
         // Check if sheet exists
-        const sheetExists = spreadsheet.data.sheets?.some(s => s.properties.title === sheetName);
+        const sheet = spreadsheet.data.sheets?.find(s => s.properties.title === sheetName);
 
-        if (!sheetExists) {
+        if (!sheet) {
             console.log(`Creating sheet: ${sheetName}`);
 
             // Add new sheet
@@ -78,6 +89,50 @@ async function ensureSheetExists(spreadsheetId, sheetName, headers = []) {
             }
 
             console.log(`✓ Sheet created: ${sheetName}`);
+        } else if (headers.length > 0) {
+            // Sheet exists, check if headers need to be added/inserted
+            const firstRowRes = await sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range: `${sheetName}!A1:Z1`
+            });
+
+            const firstRow = firstRowRes.data.values?.[0] || [];
+
+            // If empty or first cell doesn't match first header
+            if (firstRow.length === 0 || firstRow[0] !== headers[0]) {
+                console.log(`Fixing headers for ${sheetName}...`);
+
+                if (firstRow.length > 0) {
+                    // Data exists, Insert Row 1
+                    await sheets.spreadsheets.batchUpdate({
+                        spreadsheetId,
+                        resource: {
+                            requests: [{
+                                insertDimension: {
+                                    range: {
+                                        sheetId: sheet.properties.sheetId,
+                                        dimension: 'ROWS',
+                                        startIndex: 0,
+                                        endIndex: 1
+                                    },
+                                    inheritFromBefore: false
+                                }
+                            }]
+                        }
+                    });
+                }
+
+                // Write headers
+                await sheets.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: `${sheetName}!A1`,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: {
+                        values: [headers]
+                    }
+                });
+                console.log(`✓ Headers fixed for: ${sheetName}`);
+            }
         }
     } catch (error) {
         console.error('Error ensuring sheet exists:', error.message);
@@ -115,21 +170,37 @@ const server = http.createServer(async (req, res) => {
                     headers = ['Sale ID', 'Item ID', 'Item Name', 'Category', 'Quantity Sold', 'Price Per Unit', 'Total', 'Date', 'Customer', 'Sale Type', 'Payment Method', 'Notes'];
                 } else if (range === 'Loans') {
                     headers = ['Loan ID', 'Sale ID', 'Customer', 'Item Name', 'Amount', 'Date Issued', 'Due Date', 'Status', 'Date Paid', 'Notes'];
+                } else if (range === 'Warranty') {
+                    headers = ['Claim ID', 'Date', 'Product ID', 'Product Name', 'Quantity', 'Reason', 'Customer', 'Notes', 'Status'];
                 }
 
                 // Ensure sheet exists
                 await ensureSheetExists(spreadsheetId, range, headers);
+
+                // Check Cache
+                if (sheetCache[range]) {
+                    console.log(`⚡ Serving ${range} from Cache`);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(sheetCache[range]));
+                    return;
+                }
 
                 const response = await sheets.spreadsheets.values.get({
                     spreadsheetId,
                     range,
                 });
 
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
+                const result = {
                     headers: response.data.values?.[0] || [],
                     data: response.data.values?.slice(1) || []
-                }));
+                };
+
+                // Save to Cache
+                sheetCache[range] = result;
+                console.log(`💾 Cached ${range}`);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
             } catch (error) {
                 console.error('Error reading sheet:', error.message);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -169,6 +240,9 @@ const server = http.createServer(async (req, res) => {
                         }
                     });
 
+                    // Invalidate Cache
+                    invalidateCache(sheetName);
+
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true }));
                 } catch (error) {
@@ -202,6 +276,9 @@ const server = http.createServer(async (req, res) => {
                         resource: { values: [values] },
                     });
 
+                    // Invalidate Cache
+                    invalidateCache(range);
+
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true }));
                 } catch (error) {
@@ -223,6 +300,10 @@ const server = http.createServer(async (req, res) => {
                         valueInputOption: 'USER_ENTERED',
                         resource: { values }
                     });
+
+                    // Invalidate Cache
+                    const targetSheet = range.split('!')[0];
+                    invalidateCache(targetSheet);
 
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true }));
@@ -349,6 +430,11 @@ const server = http.createServer(async (req, res) => {
                             values[foundIndex][5] = String(newQty);
                         }
 
+                        // Invalidate Caches for Bulk Sale
+                        invalidateCache('Sales');
+                        invalidateCache('Inventory');
+                        invalidateCache('Loans');
+
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: true, saleId }));
                     } else {
@@ -447,6 +533,11 @@ const server = http.createServer(async (req, res) => {
                             resource: { values: [[String(newQty)]] }
                         });
 
+                        // Invalidate Caches (Sales, Inventory, Loans)
+                        invalidateCache('Sales');
+                        invalidateCache('Inventory');
+                        invalidateCache('Loans'); // Potential loan added
+
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: true, saleId, newQuantity: newQty }));
                     }
@@ -485,7 +576,14 @@ const server = http.createServer(async (req, res) => {
         const mimeTypes = {
             '.html': 'text/html',
             '.css': 'text/css',
-            '.js': 'text/javascript'
+            '.js': 'text/javascript',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.svg': 'image/svg+xml',
+            '.webp': 'image/webp',
+            '.ico': 'image/x-icon'
         };
 
         fs.readFile(filePath, (err, data) => {
@@ -500,7 +598,62 @@ const server = http.createServer(async (req, res) => {
     });
 });
 
+// Initialize Socket.io
+const { Server } = require("socket.io");
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
+io.on('connection', (socket) => {
+    console.log('A client connected');
+    socket.on('disconnect', () => {
+        console.log('Client disconnected');
+    });
+});
+
+// Helper to broadcast updates
+function broadcastUpdate() {
+    console.log('Broadcasting inventory update to all clients');
+    io.emit('inventory_update');
+}
+
 server.listen(PORT, () => {
     console.log(`\n✅ Server running at http://localhost:${PORT}`);
     console.log(`📁 Using service account: ${credentials.client_email}\n`);
+});
+
+// Monkey-patching the listeners to emit events after successful operations
+// Note: In a cleaner architecture, we'd extract the API logic. Here we inject the broadcast calls.
+
+const originalListener = server.listeners('request')[0];
+server.removeAllListeners('request');
+
+server.on('request', async (req, res) => {
+    // Capture original response end to trigger broadcast if successful API call
+    const originalEnd = res.end;
+    let isApiModification = false;
+
+    // Check if this is a modification request
+    if (req.method === 'POST' && req.url.startsWith('/api/')) {
+        if (req.url.includes('delete') || req.url.includes('append') || req.url.includes('update') || req.url.includes('recordSale')) {
+            isApiModification = true;
+        }
+    }
+
+    // Intercept response
+    res.end = function (chunk, encoding) {
+        // Call original end
+        originalEnd.apply(res, arguments);
+
+        // If successful modification, broadcast!
+        if (isApiModification && res.statusCode >= 200 && res.statusCode < 300) {
+            broadcastUpdate();
+        }
+    };
+
+    // Call original listener
+    originalListener(req, res);
 });
