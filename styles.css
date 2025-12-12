@@ -862,16 +862,44 @@ footer {
     }
 }
 
-/* Loans List */
-.loans-list {
+/* Sales and History Lists (Scrollable) */
+.sales-list,
+.loans-list,
+#recentSales,
+#warrantyHistory,
+#loansList {
     display: grid;
     gap: 10px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 8px;
+    /* space for scrollbar */
 }
 
-/* Sales List */
-.sales-list {
-    display: grid;
-    gap: 10px;
+/* Custom Scrollbar for all lists */
+.sales-list::-webkit-scrollbar,
+.loans-list::-webkit-scrollbar,
+#recentSales::-webkit-scrollbar,
+#warrantyHistory::-webkit-scrollbar,
+#loansList::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sales-list::-webkit-scrollbar-thumb,
+.loans-list::-webkit-scrollbar-thumb,
+#recentSales::-webkit-scrollbar-thumb,
+#warrantyHistory::-webkit-scrollbar-thumb,
+#loansList::-webkit-scrollbar-thumb {
+    background-color: var(--secondary-color);
+    border-radius: 3px;
+}
+
+.sales-list::-webkit-scrollbar-track,
+.loans-list::-webkit-scrollbar-track,
+#recentSales::-webkit-scrollbar-track,
+#warrantyHistory::-webkit-scrollbar-track,
+#loansList::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .sale-row {
