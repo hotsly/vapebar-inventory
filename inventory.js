@@ -1668,12 +1668,24 @@ class InventoryUI {
 
         container.innerHTML = recent.map(row => {
             const saleId = row[0] || '';
-            const itemName = row[2] || '';
+            const itemId = row[1];
+            const saleType = row[9] || 'retail';
+            let itemName = row[2] || '';
+
+            // Enhanced details for retail items (Brand - Flavor (Version))
+            if (saleType !== 'bulk' && itemId && this.manager) {
+                const item = this.manager.getItemById(itemId);
+                if (item) {
+                    itemName = `${item[2]}`;
+                    if (item[4]) itemName += ` - ${item[4]}`;
+                    if (item[3]) itemName += ` (${item[3]})`;
+                }
+            }
+
             const qty = row[4] || '';
             const total = row[6] ? `₱${parseFloat(row[6]).toFixed(2)}` : '₱0.00';
             const date = row[7] || '';
             const customer = row[8] || '';
-            const saleType = row[9] || 'retail';
             const paymentMethod = row[10] || 'Cash';
             const notes = row[11] || '';
             const typeLabel = saleType === 'bulk' ? '<span class="material-symbols-outlined" style="font-size: 16px; vertical-align: text-bottom;">inventory_2</span> Bulk' : '<span class="material-symbols-outlined" style="font-size: 16px; vertical-align: text-bottom;">shopping_bag</span> Retail';
