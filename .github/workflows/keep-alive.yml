@@ -13,4 +13,4 @@ jobs:
     steps:
       - name: Ping Website
         # REPLACE THE URL BELOW with your actual Render URL (e.g., https://vapebar-inventory.onrender.com)
-        run: curl -I https://YOUR-RENDER-APP-NAME.onrender.com
+        run: curl -I https://vapebar-inventory.onrender.com/
