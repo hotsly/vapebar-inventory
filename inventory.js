@@ -26,7 +26,11 @@ class InventoryManager {
                 // Only refresh if no modal is active to avoid disrupting user
                 if (!document.querySelector('.modal.active')) {
                     this.loadInventory().then(() => this.renderInventory());
-                    if (typeof inventoryUI !== 'undefined') inventoryUI.updateAnalytics();
+                    if (typeof inventoryUI !== 'undefined') {
+                        inventoryUI.updateAnalytics();
+                        inventoryUI.updateLoans(); // Added to sync loans
+                        inventoryUI.populateRecentSales(); // Added to sync sales history
+                    }
                     if (window.warrantyManager) {
                         window.warrantyManager.loadClaims().then(() => window.warrantyManager.renderClaims());
                     }
@@ -1744,19 +1748,30 @@ class InventoryUI {
     /**
      * Update loans display
      */
-    async updateLoans() {
+    /**
+     * Update loans display
+     * @param {boolean} fetch - Whether to fetch fresh data from API
+     */
+    async updateLoans(fetch = true) {
         try {
-            console.log('Fetching loans data...');
-            const loansRes = await sheetsAPI.fetchData('Loans');
-            const loans = loansRes.data || [];
-            // Store data for editing
-            this.loansData = loans;
-            console.log('Loans fetched:', loans.length, 'rows');
-            console.log('Loans data:', loans);
+            let loans = [];
+
+            if (fetch) {
+                console.log('Fetching loans data...');
+                const loansRes = await sheetsAPI.fetchData('Loans');
+                loans = loansRes.data || [];
+                // Store data for editing
+                this.loansData = loans;
+                console.log('Loans fetched:', loans.length, 'rows');
+            } else {
+                console.log('Using local loans data...');
+                loans = this.loansData || [];
+            }
 
             let unpaidLoans = [];
             let paidLoans = [];
             let totalUnpaidAmount = 0;
+            let totalPaidAmount = 0;
 
             loans.forEach(row => {
                 const status = row[7] || 'Unpaid';
@@ -1765,6 +1780,7 @@ class InventoryUI {
                     totalUnpaidAmount += parseFloat(row[4] || 0);
                 } else {
                     paidLoans.push(row);
+                    totalPaidAmount += parseFloat(row[4] || 0); // Accumulate paid amount
                 }
             });
 
@@ -1772,9 +1788,16 @@ class InventoryUI {
             console.log('Paid loans:', paidLoans.length);
 
             // Update summary stats
-            document.getElementById('totalUnpaidLoans').textContent = unpaidLoans.length;
-            document.getElementById('totalUnpaidAmount').textContent = `₱${totalUnpaidAmount.toFixed(2)}`;
-            document.getElementById('totalPaidLoans').textContent = paidLoans.length;
+            // Check if elements exist (might not be on analytics page)
+            const elUnpaidCount = document.getElementById('totalUnpaidLoans');
+            const elUnpaidAmount = document.getElementById('totalUnpaidAmount');
+            const elPaidCount = document.getElementById('totalPaidLoans');
+            const elPaidAmount = document.getElementById('totalPaidAmount');
+
+            if (elUnpaidCount) elUnpaidCount.textContent = unpaidLoans.length;
+            if (elUnpaidAmount) elUnpaidAmount.textContent = `₱${totalUnpaidAmount.toFixed(2)}`;
+            if (elPaidCount) elPaidCount.textContent = paidLoans.length;
+            if (elPaidAmount) elPaidAmount.textContent = `₱${totalPaidAmount.toFixed(2)}`;
 
             // Display unpaid loans
             this.displayLoansList(unpaidLoans, 'unpaidLoansList', true);
@@ -1783,8 +1806,10 @@ class InventoryUI {
             this.displayLoansList(paidLoans, 'paidLoansList', false);
         } catch (err) {
             console.error('Error loading loans:', err);
-            document.getElementById('unpaidLoansList').innerHTML = '<p class="no-items">No loans recorded yet.</p>';
-            document.getElementById('paidLoansList').innerHTML = '<p class="no-items">No paid loans yet.</p>';
+            const unpaidList = document.getElementById('unpaidLoansList');
+            const paidList = document.getElementById('paidLoansList');
+            if (unpaidList) unpaidList.innerHTML = '<p class="no-items">No loans recorded yet.</p>';
+            if (paidList) paidList.innerHTML = '<p class="no-items">No paid loans yet.</p>';
         }
     }
 
@@ -1860,13 +1885,19 @@ class InventoryUI {
         let record, rowIndex;
         let data = type === 'sales' ? this.salesData : this.loansData;
 
-        if (!data) return alert('Error: Data not loaded. Please refresh.');
+        if (!data) {
+            showCustomAlert('Error: Data not loaded. Please refresh.');
+            return;
+        }
 
         // Find index
         // Sales/Loans arrays include all fetched rows.
         // Google Sheet Row = Array Index + 2 (Header = 1, 0-based index)
-        const index = data.findIndex(r => r[0] === id);
-        if (index === -1) return alert('Record not found');
+        const index = data.findIndex(r => r[0] == id);
+        if (index === -1) {
+            showCustomAlert('Record not found');
+            return;
+        }
 
         record = data[index];
         rowIndex = index + 2;
@@ -1880,8 +1911,8 @@ class InventoryUI {
             // Sales Cols: [ID, ItemID, Name, Cat, Qty, Price, Total, Date, Customer, Type, Notes]
             fieldsContainer.innerHTML = `
                 <div class="form-group">
-                    <label>Item Name</label>
-                    <input type="text" class="input-field" value="${record[2]}" disabled style="background:#f0f0f0;">
+                    <label for="edit-sale-item">Item Name</label>
+                    <input type="text" id="edit-sale-item" name="itemName" class="input-field" value="${record[2]}" disabled style="background:#f0f0f0; color:#333; margin-top:5px;">
                 </div>
                 <div style="background:#fff3cd; color:#856404; padding:10px; border-radius:4px; font-size:0.9em; margin-bottom:15px; border: 1px solid #ffeeba;">
                      <span class="material-symbols-outlined" style="font-size:16px; vertical-align:text-bottom;">warning</span> 
@@ -1889,72 +1920,81 @@ class InventoryUI {
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Price (₱)</label>
-                        <input type="number" name="price" class="input-field" value="${record[5]}" step="0.01" required>
+                        <label for="edit-sale-price">Price (₱)</label>
+                        <input type="number" id="edit-sale-price" name="price" class="input-field" value="${record[5]}" step="0.01" required style="margin-top:5px;">
                     </div>
                     <div class="form-group">
-                        <label>Quantity</label>
-                        <input type="number" name="qty" class="input-field" value="${record[4]}" step="1" required>
+                        <label for="edit-sale-qty">Quantity</label>
+                        <input type="number" id="edit-sale-qty" name="qty" class="input-field" value="${record[4]}" step="1" readonly style="margin-top:5px; background:#f0f0f0; color:#333;">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Date</label>
-                        <input type="date" name="date" class="input-field" value="${record[7]}" required>
+                        <label for="edit-sale-date">Date</label>
+                        <input type="date" id="edit-sale-date" name="date" class="input-field" value="${record[7]}" required style="margin-top:5px;">
                     </div>
                     <div class="form-group">
-                         <label>Customer</label>
-                        <input type="text" name="customer" class="input-field" value="${record[8] || ''}">
+                         <label for="edit-sale-customer">Customer</label>
+                        <input type="text" id="edit-sale-customer" name="customer" class="input-field" value="${record[8] || ''}" style="margin-top:5px;">
                     </div>
                 </div>
+                 <div class="form-group">
+                    <label for="edit-sale-payment">Payment Method</label>
+                    <select id="edit-sale-payment" name="paymentMethod" class="input-field" style="margin-top:5px;">
+                        <option value="Cash" ${record[10] === 'Cash' ? 'selected' : ''}>Cash</option>
+                        <option value="GCash" ${record[10] === 'GCash' || record[10] === 'Gcash' ? 'selected' : ''}>GCash</option>
+                        <option value="Maya" ${record[10] === 'Maya' ? 'selected' : ''}>Maya</option>
+                        <option value="Loan" ${record[10] === 'Loan' ? 'selected' : ''}>Loan</option>
+                    </select>
+                </div>
                 <div class="form-group full-width">
-                    <label>Notes</label>
-                    <textarea name="notes" class="input-field" rows="3">${record[10] || ''}</textarea>
+                    <label for="edit-sale-notes">Notes</label>
+                    <textarea id="edit-sale-notes" name="notes" class="input-field" rows="3" style="margin-top:5px;">${record[11] || ''}</textarea>
                 </div>
             `;
         } else if (type === 'loans') {
             // Loans Cols: [ID, SaleID, Customer, ItemName, Amount, DateIssued, DueDate, Status, DatePaid, Notes]
             fieldsContainer.innerHTML = `
                 <div class="form-group">
-                    <label>Item Name</label>
-                    <input type="text" class="input-field" value="${record[3]}" disabled style="background:#f0f0f0;">
+                    <label for="edit-loan-item">Item Name</label>
+                    <input type="text" id="edit-loan-item" name="itemName" class="input-field" value="${record[3]}" disabled style="background:#f0f0f0; color:#333; margin-top:5px;">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                         <label>Customer</label>
-                        <input type="text" name="customer" class="input-field" value="${record[2]}">
+                         <label for="edit-loan-customer">Customer</label>
+                        <input type="text" id="edit-loan-customer" name="customer" class="input-field" value="${record[2]}" style="margin-top:5px;">
                     </div>
                     <div class="form-group">
-                        <label>Amount (₱)</label>
-                        <input type="number" name="amount" class="input-field" value="${record[4]}" step="0.01" required>
+                        <label for="edit-loan-amount">Amount (₱)</label>
+                        <input type="number" id="edit-loan-amount" name="amount" class="input-field" value="${record[4]}" step="0.01" readonly style="margin-top:5px; background:#f0f0f0; color:#333;">
                     </div>
                 </div>
                  <div class="form-row">
                     <div class="form-group">
-                        <label>Date Issued</label>
-                        <input type="date" name="dateIssued" class="input-field" value="${record[5]}" required>
+                        <label for="edit-loan-dateissued">Date Issued</label>
+                        <input type="date" id="edit-loan-dateissued" name="dateIssued" class="input-field" value="${record[5]}" required style="margin-top:5px;">
                     </div>
                     <div class="form-group">
-                        <label>Due Date</label>
-                        <input type="date" name="dueDate" class="input-field" value="${record[6] === 'Not set' ? '' : record[6]}">
+                        <label for="edit-loan-duedate">Due Date</label>
+                        <input type="date" id="edit-loan-duedate" name="dueDate" class="input-field" value="${record[6] === 'Not set' ? '' : record[6]}" style="margin-top:5px;">
                     </div>
                 </div>
                 <div class="form-row">
                      <div class="form-group">
-                        <label>Status</label>
-                        <select name="status" class="input-field">
+                        <label for="edit-loan-status">Status</label>
+                        <select id="edit-loan-status" name="status" class="input-field" style="margin-top:5px;">
                             <option value="Unpaid" ${record[7] === 'Unpaid' ? 'selected' : ''}>Unpaid</option>
                             <option value="Paid" ${record[7] === 'Paid' ? 'selected' : ''}>Paid</option>
                         </select>
                     </div>
                      <div class="form-group">
-                        <label>Date Paid</label>
-                        <input type="date" name="datePaid" class="input-field" value="${record[8] || ''}">
+                        <label for="edit-loan-datepaid">Date Paid</label>
+                        <input type="date" id="edit-loan-datepaid" name="datePaid" class="input-field" value="${record[8] || ''}" style="margin-top:5px;">
                     </div>
                 </div>
                 <div class="form-group full-width">
-                    <label>Notes</label>
-                    <textarea name="notes" class="input-field" rows="3">${record[9] || ''}</textarea>
+                    <label for="edit-loan-notes">Notes</label>
+                    <textarea id="edit-loan-notes" name="notes" class="input-field" rows="3" style="margin-top:5px;">${record[9] || ''}</textarea>
                 </div>
              `;
         }
@@ -1966,40 +2006,59 @@ class InventoryUI {
      * Mark loan as paid
      */
     async markLoanAsPaid(loanId) {
-        if (!confirm('Mark this loan as paid?')) {
-            return;
-        }
+        showCustomConfirm('Mark this loan as paid?', async () => {
+            await this.processLoanPayment(loanId);
+        });
+    }
 
+    async processLoanPayment(loanId) {
         try {
-            // Load loans sheet
-            const loansRes = await sheetsAPI.fetchData('Loans');
-            const loans = loansRes.data || [];
+            // Use local data first to avoid race conditions
+            const loans = this.loansData || [];
 
-            // Find loan index
+            // Find loan index in local data
             let loanIndex = -1;
             for (let i = 0; i < loans.length; i++) {
-                if (loans[i][0] === loanId) {
+                if (loans[i][0] == loanId) {
                     loanIndex = i;
                     break;
                 }
             }
 
             if (loanIndex === -1) {
-                throw new Error('Loan not found');
+                // Determine if we need to fetch? 
+                // If not found locally, maybe fetch? But for now error.
+                throw new Error('Loan not found in local data');
             }
 
-            // Update loan row: set status to "Paid" and date paid to today
+            // Optimistic Update: Update local data immediately
             const loanRow = loans[loanIndex];
+            const originalStatus = loanRow[7];
+            const originalDatePaid = loanRow[8];
+            const today = new Date().toISOString().slice(0, 10);
+
             loanRow[7] = 'Paid';
-            loanRow[8] = new Date().toISOString().slice(0, 10);
+            loanRow[8] = today;
+
+            // Render immediately (Optimistic UI)
+            this.updateLoans(false);
 
             // Update the row in Google Sheets (row index + 2 because of header and 0-based index)
             const rowNumber = loanIndex + 2;
             const range = `Loans!H${rowNumber}:I${rowNumber}`;
-            await sheetsAPI.updateRange(range, [[loanRow[7], loanRow[8]]]);
 
-            showSuccess('✓ Loan marked as paid');
-            this.updateLoans();
+            try {
+                await sheetsAPI.updateRange(range, [['Paid', today]]);
+                showSuccess('✓ Loan marked as paid');
+            } catch (apiError) {
+                // Revert local change if API fails
+                console.error('API Update failed, reverting local change:', apiError);
+                loanRow[7] = originalStatus;
+                loanRow[8] = originalDatePaid;
+                this.updateLoans(false);
+                throw apiError;
+            }
+
         } catch (error) {
             showError(`✗ Failed to mark loan as paid: ${error.message}`);
         }
@@ -2017,7 +2076,7 @@ function showSuccess(message) {
 function showError(message) {
     const status = document.getElementById('formStatus');
     if (!status) {
-        alert(message);
+        showCustomAlert(message);
         return;
     }
     status.textContent = message;
@@ -2031,12 +2090,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     loadConfig();
 
     if (!isConfigValid()) {
-        alert('Please configure Google Sheet credentials in config.js');
+        showCustomAlert('Please configure Google Sheet credentials in config.js');
         return;
     }
 
     inventoryManager = new InventoryManager();
     inventoryUI = new InventoryUI(inventoryManager);
+    window.inventoryUI = inventoryUI;
     const warrantyManager = new WarrantyManager(inventoryManager);
     window.warrantyManager = warrantyManager; // Expose for sync
 
@@ -2206,26 +2266,72 @@ document.addEventListener('DOMContentLoaded', async function () {
                 const total = (qty * price).toFixed(2);
                 const date = formData.get('date');
                 const customer = formData.get('customer');
+                const paymentMethod = formData.get('paymentMethod');
                 const notes = formData.get('notes');
 
-                // We need to update specific cells. 
-                // E, F, G, H, I, .., K
-                // Construct array: [Qty, Price, Total, Date, Customer, SaleType(skip), Notes]
-                // Wait, SaleType is J (index 9). We should preserve it.
-                // Fetch current row first? We have it in data, but simpler to just update the columns we changed.
-                // Or update distinct ranges. 
-                // Let's update E:I (Qty, Price, Total, Date, Customer) and K (Notes).
+                // Get original payment method
+                // We can find it in this.salesData using id
+                const saleRecord = inventoryUI.salesData.find(r => r[0] == id);
+                const oldPaymentMethod = saleRecord ? saleRecord[10] : 'Cash';
 
                 // Update E{row}:I{row} -> [Qty, Price, Total, Date, Customer]
                 updateRange = `Sales!E${rowIndex}:I${rowIndex}`;
                 updates = [[qty, price, total, date, customer]];
                 await sheetsAPI.updateRange(updateRange, updates);
 
-                // Update K{row} -> [Notes]
-                await sheetsAPI.updateRange(`Sales!K${rowIndex}`, [[notes]]);
+                // Update K{row}:L{row} -> [Payment Method, Notes]
+                await sheetsAPI.updateRange(`Sales!K${rowIndex}:L${rowIndex}`, [[paymentMethod, notes]]);
 
-                showSuccess('✓ Sale record updated');
-                inventoryUI.updateAnalytics(); // Refresh
+                // Handle Loan Sync Logic
+                if (paymentMethod === 'Loan' && oldPaymentMethod !== 'Loan') {
+                    // Create New Loan
+                    const loanId = `LOAN-${id}`;
+                    // Loan Row: [LoanID, SaleID, Customer, ItemName, Amount, DateIssued, DueDate, Status, DatePaid, Notes]
+                    // Sale Record Indices: 0=ID, 2=ItemName
+                    const itemName = saleRecord ? saleRecord[2] : 'Unknown Item';
+                    const loanRow = [loanId, id, customer, itemName, total, date, '', 'Unpaid', '', notes];
+
+                    await sheetsAPI.appendRow(loanRow, 'Loans');
+                    showSuccess('✓ Sale updated & Loan record created');
+
+                } else if (paymentMethod !== 'Loan' && oldPaymentMethod === 'Loan') {
+                    // Delete Existing Loan (if exists)
+                    // Need to find row index in Loans sheet
+                    const loansRes = await sheetsAPI.fetchData('Loans');
+                    const loans = loansRes.data || [];
+                    const loanIdx = loans.findIndex(l => l[1] == id); // Index 1 is SaleID
+
+                    if (loanIdx !== -1) {
+                        const loanSheetRow = loanIdx + 2; // +2 for header and 0-based
+                        // We need a deleteRow API. sheets-api.js doesn't have a direct helper exposed?
+                        // Wait, server.js has /api/sheets/delete endpoint.
+                        // But sheetsAPI class (client side) doesn't seem to have deleteRow method?
+                        // Let's check sheets-api.js again.
+                        // It assumes sheetsAPI has it. I'll add it to sheetsAPI if missing, or call fetch directly.
+                        // Actually, server.js shows /api/sheets/delete handler.
+                        // I will try strictly fetching.
+
+                        await fetch('/api/sheets/delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ spreadsheetId: CONFIG.sheetId, sheetName: 'Loans', rowIndex: loanIdx + 1 }) // rowIndex in API is 0-based excluding header?
+                            // server.js logic: startRowIndex: rowIndex.
+                            // If data starts at row 2 (index 1).
+                            // If loanIdx is 0 (array index), it corresponds to Row 2.
+                            // Google Sheets API index for Row 2 is 1.
+                            // So rowIndex = loanIdx + 1.
+                        });
+                        showSuccess('✓ Sale updated & Loan record removed');
+                    } else {
+                        showSuccess('✓ Sale updated (Loan record not found to remove)');
+                    }
+                } else {
+                    showSuccess('✓ Sale record updated');
+                }
+
+                inventoryUI.updateAnalytics(); // Refresh Sales
+                inventoryUI.updateLoans();     // Refresh Loans
+            } else if (type === 'loans') {
             } else if (type === 'loans') {
                 // Loans: C{row}:J{row} -> [Customer, ItemName(skip), Amount, DateIssued, DueDate, Status, DatePaid, Notes]
                 // Skip ItemName (D).

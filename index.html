@@ -185,6 +185,10 @@
                         <div class="stat-label">Total Paid Loans</div>
                         <div class="stat-value" id="totalPaidLoans">0</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Paid Amount</div>
+                        <div class="stat-value" id="totalPaidAmount">₱0.00</div>
+                    </div>
                 </div>
 
                 <h3>Unpaid Loans</h3>
@@ -647,6 +651,29 @@
                     <span class="material-symbols-outlined">delete</span> Delete
                 </button>
                 <button type="button" class="btn btn-secondary cancel-delete">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="customAlertModal" class="modal">
+        <div class="modal-content" style="max-width: 300px; text-align: center;">
+            <h3 style="margin-top: 0;">Notice</h3>
+            <p id="customAlertMessage">Alert message goes here.</p>
+            <div style="margin-top: 20px;">
+                <button class="btn-primary" onclick="closeCustomAlert()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="customConfirmModal" class="modal">
+        <div class="modal-content" style="max-width: 300px; text-align: center;">
+            <h3 style="margin-top: 0;">Confirm Action</h3>
+            <p id="customConfirmMessage">Are you sure?</p>
+            <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
+                <button class="btn-secondary" onclick="closeCustomConfirm(false)">Cancel</button>
+                <button class="btn-primary" id="confirmYesBtn">Confirm</button>
             </div>
         </div>
     </div>
