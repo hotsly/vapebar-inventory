@@ -1558,6 +1558,9 @@ class InventoryUI {
             const salesRes = await sheetsAPI.fetchData('Sales');
             const sales = salesRes.data || [];
 
+            // Store data for editing
+            this.salesData = sales;
+
             let totalSales = sales.length;
             let totalRevenue = 0;
             let bulkSales = 0;
@@ -1727,6 +1730,11 @@ class InventoryUI {
                     <div class="sale-right">
                         <div>${date}</div>
                         <div class="sale-customer">${customer}</div>
+                        <div style="margin-top: 4px; text-align: right;">
+                             <button class="btn-icon" onclick="inventoryUI.openEditModal('sales', '${saleId}')" title="Edit Record">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">edit</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1741,6 +1749,8 @@ class InventoryUI {
             console.log('Fetching loans data...');
             const loansRes = await sheetsAPI.fetchData('Loans');
             const loans = loansRes.data || [];
+            // Store data for editing
+            this.loansData = loans;
             console.log('Loans fetched:', loans.length, 'rows');
             console.log('Loans data:', loans);
 
@@ -1823,13 +1833,133 @@ class InventoryUI {
                             <div class="loan-date">${dateIssued}</div>
                             ${dueDate !== 'Not set' ? `<div class="loan-due">Due: ${dueDate}</div>` : ''}
                         </div>
-                        <div class="loan-action">
+                        <div class="loan-action" style="display: flex; gap: 5px; justify-content: flex-end; align-items: center;">
                             ${markPaidBtn}
+                            <button class="btn-icon" onclick="inventoryUI.openEditModal('loans', '${loanId}')" title="Edit Loan">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">edit</span>
+                            </button>
                         </div>
                     </div>
                 </div>
             `;
         }).join('');
+    }
+
+    /**
+     * Open Edit Modal
+     */
+    openEditModal(type, id) {
+        const modal = document.getElementById('editHistoryModal');
+        const form = document.getElementById('editHistoryForm');
+        const fieldsContainer = document.getElementById('editFieldsContainer');
+        const typeInput = document.getElementById('editRecordType');
+        const indexInput = document.getElementById('editRecordIndex');
+        const idInput = document.getElementById('editRecordId');
+
+        // Find record
+        let record, rowIndex;
+        let data = type === 'sales' ? this.salesData : this.loansData;
+
+        if (!data) return alert('Error: Data not loaded. Please refresh.');
+
+        // Find index
+        // Sales/Loans arrays include all fetched rows.
+        // Google Sheet Row = Array Index + 2 (Header = 1, 0-based index)
+        const index = data.findIndex(r => r[0] === id);
+        if (index === -1) return alert('Record not found');
+
+        record = data[index];
+        rowIndex = index + 2;
+
+        typeInput.value = type;
+        indexInput.value = rowIndex;
+        idInput.value = id;
+        fieldsContainer.innerHTML = '';
+
+        if (type === 'sales') {
+            // Sales Cols: [ID, ItemID, Name, Cat, Qty, Price, Total, Date, Customer, Type, Notes]
+            fieldsContainer.innerHTML = `
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" class="input-field" value="${record[2]}" disabled style="background:#f0f0f0;">
+                </div>
+                <div style="background:#fff3cd; color:#856404; padding:10px; border-radius:4px; font-size:0.9em; margin-bottom:15px; border: 1px solid #ffeeba;">
+                     <span class="material-symbols-outlined" style="font-size:16px; vertical-align:text-bottom;">warning</span> 
+                     <strong>Note:</strong> Changing "Quantity" here updates the record but <u>does NOT automatically adjust</u> the Inventory stock.
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Price (₱)</label>
+                        <input type="number" name="price" class="input-field" value="${record[5]}" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" name="qty" class="input-field" value="${record[4]}" step="1" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" name="date" class="input-field" value="${record[7]}" required>
+                    </div>
+                    <div class="form-group">
+                         <label>Customer</label>
+                        <input type="text" name="customer" class="input-field" value="${record[8] || ''}">
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label>Notes</label>
+                    <textarea name="notes" class="input-field" rows="3">${record[10] || ''}</textarea>
+                </div>
+            `;
+        } else if (type === 'loans') {
+            // Loans Cols: [ID, SaleID, Customer, ItemName, Amount, DateIssued, DueDate, Status, DatePaid, Notes]
+            fieldsContainer.innerHTML = `
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" class="input-field" value="${record[3]}" disabled style="background:#f0f0f0;">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                         <label>Customer</label>
+                        <input type="text" name="customer" class="input-field" value="${record[2]}">
+                    </div>
+                    <div class="form-group">
+                        <label>Amount (₱)</label>
+                        <input type="number" name="amount" class="input-field" value="${record[4]}" step="0.01" required>
+                    </div>
+                </div>
+                 <div class="form-row">
+                    <div class="form-group">
+                        <label>Date Issued</label>
+                        <input type="date" name="dateIssued" class="input-field" value="${record[5]}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" name="dueDate" class="input-field" value="${record[6] === 'Not set' ? '' : record[6]}">
+                    </div>
+                </div>
+                <div class="form-row">
+                     <div class="form-group">
+                        <label>Status</label>
+                        <select name="status" class="input-field">
+                            <option value="Unpaid" ${record[7] === 'Unpaid' ? 'selected' : ''}>Unpaid</option>
+                            <option value="Paid" ${record[7] === 'Paid' ? 'selected' : ''}>Paid</option>
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label>Date Paid</label>
+                        <input type="date" name="datePaid" class="input-field" value="${record[8] || ''}">
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label>Notes</label>
+                    <textarea name="notes" class="input-field" rows="3">${record[9] || ''}</textarea>
+                </div>
+             `;
+        }
+
+        modal.style.display = 'flex';
     }
 
     /**
@@ -2046,8 +2176,90 @@ document.addEventListener('DOMContentLoaded', async function () {
     } catch (error) {
         document.getElementById('loadingMessage').style.display = 'none';
         document.getElementById('errorMessage').textContent = `Error: ${error.message}`;
+        document.getElementById('errorMessage').textContent = `Error: ${error.message}`;
         document.getElementById('errorMessage').style.display = 'block';
     }
+
+    // Edit History Form Handler
+    document.getElementById('editHistoryForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const type = document.getElementById('editRecordType').value;
+        const rowIndex = document.getElementById('editRecordIndex').value;
+        const id = document.getElementById('editRecordId').value;
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+
+        try {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            const formData = new FormData(this);
+            let updateRange, updates;
+
+            if (type === 'sales') {
+                // Update Columns: Qty(E), Price(F), Total(G), Date(H), Customer(I), Notes(K)
+                // Indexes: E=4, F=5, G=6, H=7, I=8, K=10 (A=0)
+                // Range for Row: Sales!E{row}:K{row}
+
+                const qty = parseFloat(formData.get('qty'));
+                const price = parseFloat(formData.get('price'));
+                const total = (qty * price).toFixed(2);
+                const date = formData.get('date');
+                const customer = formData.get('customer');
+                const notes = formData.get('notes');
+
+                // We need to update specific cells. 
+                // E, F, G, H, I, .., K
+                // Construct array: [Qty, Price, Total, Date, Customer, SaleType(skip), Notes]
+                // Wait, SaleType is J (index 9). We should preserve it.
+                // Fetch current row first? We have it in data, but simpler to just update the columns we changed.
+                // Or update distinct ranges. 
+                // Let's update E:I (Qty, Price, Total, Date, Customer) and K (Notes).
+
+                // Update E{row}:I{row} -> [Qty, Price, Total, Date, Customer]
+                updateRange = `Sales!E${rowIndex}:I${rowIndex}`;
+                updates = [[qty, price, total, date, customer]];
+                await sheetsAPI.updateRange(updateRange, updates);
+
+                // Update K{row} -> [Notes]
+                await sheetsAPI.updateRange(`Sales!K${rowIndex}`, [[notes]]);
+
+                showSuccess('✓ Sale record updated');
+                inventoryUI.updateAnalytics(); // Refresh
+            } else if (type === 'loans') {
+                // Loans: C{row}:J{row} -> [Customer, ItemName(skip), Amount, DateIssued, DueDate, Status, DatePaid, Notes]
+                // Skip ItemName (D).
+                // Update C (Customer), E:J (Amount...Notes)
+
+                const customer = formData.get('customer');
+                const amount = parseFloat(formData.get('amount'));
+                const dateIssued = formData.get('dateIssued');
+                const dueDate = formData.get('dueDate') || 'Not set';
+                const status = formData.get('status');
+                const datePaid = formData.get('datePaid');
+                const notes = formData.get('notes');
+
+                // Update C{row}
+                await sheetsAPI.updateRange(`Loans!C${rowIndex}`, [[customer]]);
+
+                // Update E{row}:J{row}
+                // [Amount, DateIssued, DueDate, Status, DatePaid, Notes]
+                const batchUpdates = [[amount, dateIssued, dueDate, status, datePaid, notes]];
+                await sheetsAPI.updateRange(`Loans!E${rowIndex}:J${rowIndex}`, batchUpdates);
+
+                showSuccess('✓ Loan record updated');
+                inventoryUI.updateLoans(); // Refresh
+            }
+
+            document.getElementById('editHistoryModal').style.display = 'none';
+        } catch (error) {
+            console.error('Update failed:', error);
+            showError('✗ ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
 });
 
 // Dark Mode Toggle

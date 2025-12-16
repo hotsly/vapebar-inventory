@@ -347,6 +347,23 @@ small a:hover {
     transition: all 0.2s;
 }
 
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 4px;
+    border-radius: 50%;
+    transition: background 0.2s;
+    opacity: 0.6;
+}
+
+.btn-icon:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--primary-color);
+    opacity: 1;
+}
+
 .btn-edit {
     background-color: var(--secondary-color);
     color: white;

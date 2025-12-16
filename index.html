@@ -651,6 +651,35 @@
         </div>
     </div>
 
+    <!-- Edit History Modal -->
+    <div id="editHistoryModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Edit Record</h2>
+                <span class="close-modal"
+                    onclick="document.getElementById('editHistoryModal').style.display='none'">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editHistoryForm">
+                    <input type="hidden" id="editRecordType"> <!-- 'sales' or 'loans' -->
+                    <input type="hidden" id="editRecordIndex"> <!-- Spreadsheet Row Index -->
+                    <input type="hidden" id="editRecordId"> <!-- ID column -->
+
+                    <div id="editFieldsContainer">
+                        <!-- Dynamic Fields injected here -->
+                    </div>
+
+                    <div class="button-group" style="margin-top: 20px; justify-content: flex-end;">
+                        <button type="submit" class="btn btn-primary"><span
+                                class="material-symbols-outlined">save</span> Save</button>
+                        <button type="button" class="btn btn-secondary"
+                            onclick="document.getElementById('editHistoryModal').style.display='none'">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="config.js"></script>
     <script src="sheets-api.js"></script>
