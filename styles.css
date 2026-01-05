@@ -1545,5 +1545,292 @@ section {
     .modal-content {
         width: 95%;
         padding: 20px;
+        max-height: 85vh;
     }
+
+    .modal-header h2 {
+        font-size: 1.2em;
+    }
+
+    .close-modal {
+        font-size: 24px;
+    }
+}
+
+/* Custom Alert and Confirm Modals */
+#customAlertModal .modal-content,
+#customConfirmModal .modal-content {
+    max-width: 350px;
+    text-align: center;
+    padding: 25px;
+}
+
+#customAlertModal h3,
+#customConfirmModal h3 {
+    color: var(--heading-color);
+    font-size: 1.2em;
+    margin-bottom: 15px;
+    margin-top: 0;
+}
+
+#customAlertModal p,
+#customConfirmModal p {
+    color: var(--text-color);
+    font-size: 1em;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+#customConfirmModal button {
+    min-width: 100px;
+}
+
+/* Modal Variants */
+.modal-delete {
+    max-width: 400px;
+    text-align: center;
+}
+
+.modal-alert {
+    max-width: 300px;
+    text-align: center;
+}
+
+.modal-confirm {
+    max-width: 300px;
+    text-align: center;
+}
+
+.modal-edit {
+    max-width: 500px;
+}
+
+/* Warning Text */
+.warning-text {
+    color: var(--danger-color);
+    font-size: 0.9em;
+    margin-top: 10px;
+}
+
+/* Danger Button */
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.btn-danger:hover {
+    background-color: #d33b27;
+    border-color: #d33b27;
+}
+
+/* Loans Summary Grid */
+.loans-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+@media (max-width: 600px) {
+    .loans-summary {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .loans-summary .stat-card {
+        padding: 12px;
+    }
+
+    .stat-label {
+        font-size: 0.8em;
+    }
+
+    .stat-value {
+        font-size: 1.3em;
+    }
+}
+
+/* Bulk Items Container */
+#bulkItemCheckboxes {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+@media (max-width: 600px) {
+    #bulkItemCheckboxes {
+        grid-template-columns: 1fr;
+        max-height: 300px;
+    }
+}
+
+/* Selected Bulk Items Display */
+#selectedBulkItemsList {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: var(--form-bg);
+    border-radius: 6px;
+    border-left: 4px solid var(--primary-color);
+    display: none;
+}
+
+#selectedBulkItemsList strong {
+    font-size: 1em;
+    color: var(--heading-color);
+    display: block;
+    margin-bottom: 10px;
+}
+
+/* Buttons in bulk items container */
+#clearBulkItemsBtn {
+    padding: 6px 12px;
+    font-size: 0.85em;
+}
+
+/* Info Box in bulk sales */
+.info-box {
+    background-color: var(--form-bg);
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.info-box strong {
+    color: var(--heading-color);
+}
+
+/* Bulk Flavors Section */
+#bulkFlavorSection label:first-child {
+    margin-bottom: 10px;
+    display: block;
+}
+
+#bulkItemsContainer>div:first-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+@media (max-width: 480px) {
+    #bulkItemsContainer>div:first-child {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Price Info Display */
+#bulkPriceInfo {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+#bulkPriceInfo div {
+    font-size: 0.9em;
+    color: var(--text-color);
+}
+
+/* Mobile - Stack forms vertically on small screens */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-type-selector {
+        flex-direction: column;
+    }
+
+    .sales-type-btn {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+}
+
+/* Improve touch targets for mobile */
+@media (max-width: 768px) {
+
+    .tab-btn,
+    .btn,
+    .input-field,
+    select.input-field {
+        min-height: 48px;
+    }
+
+    .tab-btn .material-symbols-outlined {
+        font-size: 20px;
+    }
+}
+
+/* Mobile - Better modal handling */
+@media (max-width: 600px) {
+    .modal-content {
+        width: 95%;
+        max-height: 90vh;
+        padding: 20px;
+        margin: 10px;
+    }
+
+    .modal-header {
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+    }
+
+    .modal-header h2 {
+        font-size: 1.3em;
+    }
+
+    .close-modal {
+        font-size: 24px;
+    }
+
+    .modal-body {
+        margin-bottom: 15px;
+    }
+}
+
+/* Ensure consistent spacing */
+section {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Better scrollbar for all scrollable elements */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* Dark mode scrollbar */
+html.dark-mode ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
 }

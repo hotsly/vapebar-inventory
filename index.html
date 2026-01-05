@@ -171,8 +171,7 @@
             <section class="tab-content" id="loans">
                 <h2>Loans Management</h2>
 
-                <div class="loans-summary"
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                <div class="loans-summary">
                     <div class="stat-card">
                         <div class="stat-label">Total Unpaid Loans</div>
                         <div class="stat-value" id="totalUnpaidLoans">0</div>
@@ -347,9 +346,8 @@
                     <!-- Bulk-only section -->
                     <div id="bulkSection" class="form-row" style="display: none;">
                         <div class="form-group full-width">
-                            <div
-                                style="background-color: #e3f2fd; padding: 12px; border-radius: 6px; border-left: 4px solid #2196f3; margin-bottom: 15px;">
-                                <strong>Bulk Sale:</strong> You will manually select which flavors to include in the
+                            <div class="info-box">
+                                <strong>Bulk Sale:</strong> You will manually select which flavors to include in
                                 bulk order.
                             </div>
                         </div>
@@ -370,7 +368,7 @@
                                 <div
                                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                     <label style="margin: 0;">Select Items from <span id="selectedCategoryName"
-                                            style="font-weight: bold; color: #2196f3;"></span></label>
+                                            style="font-weight: bold; color: var(--primary-color);"></span></label>
                                     <button type="button" id="clearBulkItemsBtn" class="btn btn-secondary"
                                         style="padding: 4px 12px; font-size: 13px;">Clear All</button>
                                 </div>
@@ -380,8 +378,7 @@
                                 </div>
                             </div>
 
-                            <div id="selectedBulkItemsList"
-                                style="margin-top: 15px; padding: 15px; background-color: var(--form-bg); border-radius: 6px; border-left: 4px solid #2196f3; display: none;">
+                            <div id="selectedBulkItemsList">
                                 <strong style="font-size: 15px;">Selected Items:</strong>
                                 <div id="selectedBulkItemsDisplay" style="margin-top: 10px;"></div>
                             </div>
@@ -393,7 +390,8 @@
                             <label for="bulkSalePrice">Bulk Sale Price Per Piece (₱) *</label>
                             <input type="number" id="bulkSalePrice" class="input-field" step="0.01" min="0"
                                 placeholder="e.g., 200">
-                            <small style="color: #666; font-size: 12px;">Set the selling price per piece for this bulk
+                            <small style="color: var(--text-color); font-size: 12px;">Set the selling price per piece
+                                for this bulk
                                 order</small>
                         </div>
 
@@ -405,7 +403,7 @@
 
                     <div id="bulkPaymentSection" class="form-row" style="display: none;">
                         <div class="form-group">
-                            <label for="bulkPaymentMethod">Payment Method *</label>
+                            <label for="bulkPaymentMethod">Payment Method</label>
                             <select id="bulkPaymentMethod" class="input-field">
                                 <option value="Cash">Cash</option>
                                 <option value="GCash">GCash</option>
@@ -420,7 +418,7 @@
                             <div class="price-summary">
                                 <div>Unit Price: <span id="summaryUnitPrice">₱0.00</span></div>
                                 <div>Total: <span id="summaryTotal">₱0.00</span></div>
-                                <div id="bulkIndicator" style="color: #27ae60; font-weight: bold; display: none;">
+                                <div id="bulkIndicator">
                                     <span class="material-symbols-outlined"
                                         style="vertical-align: text-bottom; font-size: 1.2em;">check_circle</span> Bulk
                                     Discount Applied
@@ -564,8 +562,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Edit Item</h2>
-                <span class="close-modal"><span class="material-symbols-outlined"
-                        style="font-size: 1.2em;">close</span></span>
+                <span class="close-modal"><span class="material-symbols-outlined">close</span></span>
             </div>
             <form id="editItemForm">
                 <input type="hidden" id="editItemId">
@@ -632,21 +629,18 @@
 
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
-        <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div class="modal-content modal-delete">
             <div class="modal-header">
                 <h2>Delete Item</h2>
-                <span class="close-modal"><span class="material-symbols-outlined"
-                        style="font-size: 1.2em;">close</span></span>
+                <span class="close-modal"><span class="material-symbols-outlined">close</span></span>
             </div>
             <div class="modal-body" style="margin-bottom: 20px;">
                 <p>Are you sure you want to delete <strong id="deleteItemNameDisplay">this item</strong>?</p>
-                <p style="color: var(--danger-color); font-size: 0.9em; margin-top: 10px;">This action cannot be undone.
-                </p>
+                <p class="warning-text">This action cannot be undone.</p>
                 <input type="hidden" id="deleteItemIdInput">
             </div>
             <div class="button-group">
-                <button id="confirmDeleteBtn" class="btn btn-primary"
-                    style="background-color: var(--danger-color); border-color: var(--danger-color);"
+                <button id="confirmDeleteBtn" class="btn btn-primary btn-danger"
                     onclick="inventoryUI.handleDeleteConfirm()">
                     <span class="material-symbols-outlined">delete</span> Delete
                 </button>
@@ -657,22 +651,23 @@
 
     <!-- Custom Alert Modal -->
     <div id="customAlertModal" class="modal">
-        <div class="modal-content" style="max-width: 300px; text-align: center;">
-            <h3 style="margin-top: 0;">Notice</h3>
+        <div class="modal-content modal-alert">
+            <h3>Notice</h3>
             <p id="customAlertMessage">Alert message goes here.</p>
             <div style="margin-top: 20px;">
-                <button class="btn-primary" onclick="closeCustomAlert()">OK</button>
+                <button class="btn-primary"
+                    onclick="document.getElementById('customAlertModal').style.display='none'">OK</button>
             </div>
         </div>
     </div>
 
     <!-- Custom Confirm Modal -->
     <div id="customConfirmModal" class="modal">
-        <div class="modal-content" style="max-width: 300px; text-align: center;">
-            <h3 style="margin-top: 0;">Confirm Action</h3>
+        <div class="modal-content modal-confirm">
+            <h3>Confirm Action</h3>
             <p id="customConfirmMessage">Are you sure?</p>
             <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
-                <button class="btn-secondary" onclick="closeCustomConfirm(false)">Cancel</button>
+                <button class="btn-secondary confirm-cancel" id="confirmCancelBtn">Cancel</button>
                 <button class="btn-primary" id="confirmYesBtn">Confirm</button>
             </div>
         </div>
@@ -680,7 +675,7 @@
 
     <!-- Edit History Modal -->
     <div id="editHistoryModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content modal-edit">
             <div class="modal-header">
                 <h2>Edit Record</h2>
                 <span class="close-modal"
