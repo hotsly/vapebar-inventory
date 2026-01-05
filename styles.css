@@ -125,10 +125,57 @@ header h1 {
     font-weight: 400;
 }
 
+/* Dark Mode Toggle */
+.dark-mode-toggle {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    font-size: 1em;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    color: var(--text-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    font-weight: 500;
+    box-shadow: var(--shadow);
+}
 
+.dark-mode-toggle:hover {
+    background-color: var(--form-bg);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.dark-mode-toggle:active {
+    transform: translateY(0);
+}
 
 .dark-mode-toggle .material-symbols-outlined {
-    font-size: 24px;
+    font-size: 20px;
+}
+
+/* Mobile Toggle Optimization */
+@media (max-width: 600px) {
+    .dark-mode-toggle {
+        padding: 8px;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        justify-content: center;
+    }
+
+    .dark-mode-toggle #darkModeText {
+        display: none;
+    }
+
+    .dark-mode-toggle .material-symbols-outlined {
+        font-size: 20px;
+    }
 }
 
 /* Main Content */
@@ -182,7 +229,7 @@ section h3 {
 }
 
 .tab-btn {
-    padding: 15px 30px;
+    padding: 15px 24px;
     border: none;
     background: transparent;
     color: var(--text-color);
@@ -190,9 +237,9 @@ section h3 {
     font-weight: 600;
     cursor: pointer;
     border-bottom: 3px solid transparent;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
     border-radius: 8px 8px 0 0;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
     justify-content: center;
@@ -297,7 +344,7 @@ small a:hover {
     border: 1px solid var(--border-color);
 }
 
-/* Buttons */
+/* Buttons - Standardized Design System */
 .btn {
     padding: 12px 24px;
     border: none;
@@ -305,8 +352,26 @@ small a:hover {
     font-size: 1em;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
-    display: inline-block;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .btn-primary {
@@ -316,14 +381,6 @@ small a:hover {
 
 .btn-primary:hover {
     background-color: #274419;
-    box-shadow: var(--shadow);
-    transform: translateY(-2px);
-}
-
-.btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
 }
 
 .btn-secondary {
@@ -338,23 +395,22 @@ small a:hover {
 }
 
 .btn-small {
-    padding: 8px 12px;
+    padding: 8px 16px;
     font-size: 0.9em;
-    margin-right: 8px;
-    border: none;
     border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
+}
+
+.btn-small:hover {
+    transform: translateY(-1px);
 }
 
 .btn-icon {
     background: none;
     border: none;
-    cursor: pointer;
     color: var(--text-color);
-    padding: 4px;
+    padding: 8px;
     border-radius: 50%;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
     opacity: 0.6;
 }
 
@@ -362,6 +418,7 @@ small a:hover {
     background: rgba(0, 0, 0, 0.1);
     color: var(--primary-color);
     opacity: 1;
+    transform: scale(1.1);
 }
 
 .btn-edit {
@@ -382,6 +439,15 @@ small a:hover {
     background-color: #d33b27;
 }
 
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #d33b27;
+}
+
 .button-group {
     display: flex;
     gap: 10px;
@@ -389,6 +455,10 @@ small a:hover {
 }
 
 .button-group .btn {
+    flex: 1;
+}
+
+.button-group .btn-small {
     flex: 1;
 }
 
@@ -408,14 +478,20 @@ small a:hover {
     color: var(--text-color);
     border-radius: 6px;
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
     font-size: 1em;
     transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
 }
 
 .sales-type-btn:hover {
     border-color: var(--primary-color);
     color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
 }
 
 .sales-type-btn.active {
@@ -423,6 +499,10 @@ small a:hover {
     color: white;
     border-color: var(--primary-color);
     box-shadow: var(--shadow);
+}
+
+.sales-type-btn:active {
+    transform: translateY(0);
 }
 
 /* Bulk Quantity Quick Buttons */
@@ -434,16 +514,19 @@ small a:hover {
 }
 
 .qty-btn {
-    padding: 8px 14px;
-    background-color: #f0f0f0;
+    padding: 8px 16px;
+    background-color: var(--form-bg);
     border: 2px solid var(--primary-color);
     color: var(--primary-color);
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 0.95em;
-    transition: all 0.2s ease;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
     min-width: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .qty-btn:hover {
@@ -764,26 +847,6 @@ footer {
     border-top: 1px solid var(--border-color);
 }
 
-/* Dark Mode Toggle */
-.dark-mode-toggle {
-    background: none;
-    border: none;
-    font-size: 1.3em;
-    cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: auto;
-}
-
-.dark-mode-toggle:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    transform: scale(1.1);
-}
 
 /* Loans */
 .loan-row {
@@ -992,50 +1055,6 @@ footer {
     margin-bottom: 10px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
-}
-
-.dark-mode-toggle {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    padding: 6px 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-color);
-    font-weight: 500;
-    box-shadow: var(--shadow);
-    transition: all 0.3s;
-    white-space: nowrap;
-    flex-shrink: 0;
-    font-size: 0.9em;
-}
-
-.dark-mode-toggle:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
-    background: var(--form-bg);
-}
-
-/* Mobile Toggle Optimization */
-@media (max-width: 600px) {
-    .dark-mode-toggle {
-        padding: 8px;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        justify-content: center;
-    }
-
-    .dark-mode-toggle #darkModeText {
-        display: none;
-    }
-
-    .dark-mode-toggle .material-symbols-outlined {
-        font-size: 20px;
-        /* Smaller icon on mobile */
-    }
 }
 
 .warranty-claim-title {
