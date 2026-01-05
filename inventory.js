@@ -2083,6 +2083,71 @@ function showError(message) {
     status.className = 'status-message error';
 }
 
+function showCustomAlert(message) {
+    // Create alert modal if it doesn't exist
+    let modal = document.getElementById('customAlertModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'customAlertModal';
+        modal.className = 'modal';
+        modal.style.cssText = 'display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;';
+        modal.innerHTML = `
+            <div style="background: white; padding: 20px; border-radius: 8px; max-width: 400px; width: 90%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div id="customAlertMessage" style="margin-bottom: 20px;"></div>
+                <button onclick="document.getElementById('customAlertModal').style.display='none'" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">OK</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    document.getElementById('customAlertMessage').textContent = message;
+    modal.style.display = 'flex';
+}
+
+function showCustomConfirm(message, callback) {
+    // Create confirm modal if it doesn't exist
+    let modal = document.getElementById('customConfirmModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'customConfirmModal';
+        modal.className = 'modal';
+        modal.style.cssText = 'display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;';
+        modal.innerHTML = `
+            <div style="background: white; padding: 20px; border-radius: 8px; max-width: 400px; width: 90%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div id="customConfirmMessage" style="margin-bottom: 20px;"></div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button id="confirmCancelBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                    <button id="confirmOkBtn" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    document.getElementById('customConfirmMessage').textContent = message;
+    modal.style.display = 'flex';
+
+    // Set up button handlers
+    const okBtn = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+
+    // Remove old listeners
+    const newOkBtn = okBtn.cloneNode(true);
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+    // Add new listeners
+    newOkBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        if (callback) callback();
+    });
+
+    newCancelBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+}
+
 // Initialize when page loads
 let inventoryManager, inventoryUI;
 
